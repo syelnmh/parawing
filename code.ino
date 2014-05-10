@@ -12,7 +12,7 @@ void forward(int stepsToMove);
 void backward(int stepsToMove);
 
 //30000ms for 30 second loop
-const int sleepTime=300;
+const int sleepTime=3000;
 
 //polulu motor 1209
 const int stepsPerRevolution=200;
@@ -26,6 +26,8 @@ int neutralPin=7;
 int rightPin=6;
 int leftPin=5;
 int cutOutPin=2;
+int go=0;
+int cutCounter=0;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();     //creates motorshield object
 Adafruit_StepperMotor *ester = AFMS.getStepper(200, 1); //connects motor 200 steps on M1 and M2
@@ -45,41 +47,49 @@ void setup() {
   pinMode(5,OUTPUT);
   pinMode(6,OUTPUT);
   pinMode(7,OUTPUT);
+  // LN - Need to move it to get holding current.
+  forward(1);
+  backward(1);
 }
 
-  int go=0;
-  int cutCounter=0;
   
 void loop(){
   if(digitalRead(cutDownPin) == HIGH) {
-    go=1;
-    cutCounter=1;
+    //LN - De-bounce cutdown signal - may glitch when powered on.
+    delay(10); //LN - Minimum glitch width
+   if (digitalRead(cutDownPin) == HIGH) {
+      go=1;
+      cutCounter=1;
+      inform(0);
+      delay(10000); //LN - Delay for deployment
+    }
   }  
   //start loop at neutral position after go has been detected.
   while(go==1){
       if(cutCounter==1){
         digitalWrite(2,1);
-        inform(0);
       }
-      forward(stepsPerRevolution*1.5);
+      
       inform(1);
-      delay(sleepTime);
+      forward(stepsPerRevolution*1.5);
       //now at right position
-
+      inform(0); //Holding
+      delay(sleepTime);
+      inform(2);
       backward(stepsPerRevolution*1.5);
+      //now at neutral position
       inform(0); 
       delay(sleepTime);
-      //now at neutral position
-
-      backward(stepsPerRevolution*1.5);
       inform(2);
-      delay(sleepTime);      
+      backward(stepsPerRevolution*1.5);
       //now at left position
-
+      inform(0);
+      delay(sleepTime);      
+      inform(1);
       forward(stepsPerRevolution*1.5);
+      //now at neutral position
       inform(0);
       delay(sleepTime);
-      //now at neutral position
       
       if(cutCounter==1){
         digitalWrite(2,0);
@@ -102,22 +112,28 @@ void backward(int stepsToMove){
 
 //Manages status update outputs
 void inform(int input){  
-  //resets all pins to LOW
-  digitalWrite(5,0);
-  digitalWrite(6,0);
-  digitalWrite(7,0);
-  
+  //LN - Reset temporary control state variables
+  int neutral = 0;
+  int right = 0;
+  int left = 0;
+
+  //LN - Set the requested state variable
   switch(input){
     case 0:
-      digitalWrite(neutralPin,1);      
+      neutral = 1;      
     break;
     
     case 1:
-      digitalWrite(rightPin,1);      
+      right = 1;      
     break;
     
     case 2:
-      digitalWrite(leftPin,1);
+      left = 1;
     break;
   }
+
+  //LN - Now write the output states
+  digitalWrite(neutralPin,neutral);
+  digitalWrite(rightPin,right);
+  digitalWrite(leftPin,left);
 }
