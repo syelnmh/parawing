@@ -1,4 +1,4 @@
-parawing
+ParawingControl
 ========
 
 Far Horizons
