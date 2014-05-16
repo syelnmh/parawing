@@ -12,7 +12,7 @@ void forward(int stepsToMove);
 void backward(int stepsToMove);
 
 //30000ms for 30 second loop
-const int sleepTime=3000;
+const int sleepTime=30000;
 
 //polulu motor 1209
 const int stepsPerRevolution=200;
